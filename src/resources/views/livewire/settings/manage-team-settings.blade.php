@@ -25,8 +25,8 @@
     </form>
 
     @if (session('status') === 'team-updated')
-        <x-action-message class="me-3" on="team-saved">
+        <flux:text class="text-sm font-medium text-green-600 dark:text-green-400">
             {{ __('Team settings updated successfully.') }}
-        </x-action-message>
+        </flux:text>
     @endif
 </div> 

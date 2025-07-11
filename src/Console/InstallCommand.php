@@ -69,24 +69,49 @@ class InstallCommand extends Command
 
     protected function addTeamsNavigation()
     {
-        $headerPath = resource_path('views/components/layouts/app/header.blade.php');
+        // Try multiple possible header locations for Laravel 12 + Flux
+        $possibleHeaderPaths = [
+            resource_path('views/components/layouts/app/header.blade.php'),
+            resource_path('views/components/layouts/header.blade.php'),
+            resource_path('views/layouts/header.blade.php'),
+            resource_path('views/components/header.blade.php'),
+        ];
         
-        if (File::exists($headerPath)) {
+        $headerPath = null;
+        foreach ($possibleHeaderPaths as $path) {
+            if (File::exists($path)) {
+                $headerPath = $path;
+                break;
+            }
+        }
+        
+        if ($headerPath) {
             $content = File::get($headerPath);
             
             if (!str_contains($content, 'teams')) {
-                // Add teams navigation item
-                $content = str_replace(
-                    '{{ __(\'Dashboard\') }}',
-                    "{{ __('Dashboard') }}\n                <flux:navbar.item icon=\"users\" :href=\"route('teams')\" :current=\"request()->routeIs('teams')\" wire:navigate>\n                    {{ __('Teams') }}\n                </flux:navbar.item>",
-                    $content
-                );
+                // Add teams navigation item - try to find a good insertion point
+                if (str_contains($content, 'Dashboard')) {
+                    $content = str_replace(
+                        '{{ __(\'Dashboard\') }}',
+                        "{{ __('Dashboard') }}\n                <flux:navbar.item icon=\"users\" :href=\"route('teams')\" :current=\"request()->routeIs('teams')\" wire:navigate>\n                    {{ __('Teams') }}\n                </flux:navbar.item>",
+                        $content
+                    );
+                } elseif (str_contains($content, 'flux:navbar.item')) {
+                    // Add after existing navbar items
+                    $content = str_replace(
+                        '</flux:navbar>',
+                        "                <flux:navbar.item icon=\"users\" :href=\"route('teams')\" :current=\"request()->routeIs('teams')\" wire:navigate>\n                    {{ __('Teams') }}\n                </flux:navbar.item>\n            </flux:navbar>",
+                        $content
+                    );
+                }
                 
                 File::put($headerPath, $content);
                 $this->info('✓ Added teams navigation to header');
             } else {
                 $this->info('✓ Teams navigation already exists in header');
             }
+        } else {
+            $this->warn('⚠ Could not find header file to add navigation. Please add teams navigation manually.');
         }
     }
 } 

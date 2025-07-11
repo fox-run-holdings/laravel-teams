@@ -54,15 +54,15 @@
     @endif
 
     @if (session('status') === 'invitation-sent')
-        <x-action-message class="me-3" on="invitation-sent">
+        <flux:text class="text-sm font-medium text-green-600 dark:text-green-400">
             {{ __('Invitation sent successfully.') }}
-        </x-action-message>
+        </flux:text>
     @endif
 
     @if (session('status') === 'invitation-cancelled')
-        <x-action-message class="me-3" on="invitation-cancelled">
+        <flux:text class="text-sm font-medium text-green-600 dark:text-green-400">
             {{ __('Invitation cancelled successfully.') }}
-        </x-action-message>
+        </flux:text>
     @endif
 
     @if (session('error'))

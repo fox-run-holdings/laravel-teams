@@ -62,15 +62,15 @@
     </div>
 
     @if (session('status') === 'member-removed')
-        <x-action-message class="me-3" on="member-removed">
+        <flux:text class="text-sm font-medium text-green-600 dark:text-green-400">
             {{ __('Member removed successfully.') }}
-        </x-action-message>
+        </flux:text>
     @endif
 
     @if (session('status') === 'role-updated')
-        <x-action-message class="me-3" on="role-updated">
+        <flux:text class="text-sm font-medium text-green-600 dark:text-green-400">
             {{ __('Role updated successfully.') }}
-        </x-action-message>
+        </flux:text>
     @endif
 
     @if (session('error'))
