@@ -26,8 +26,15 @@
         }
         
         public function removeMember($userId) {
-            if (!$this->team || !$this->team->userHasPermission(Auth::id(), 'delete')) {
-                abort(403);
+            if (!$this->team) {
+                session()->flash('error', 'No team selected.');
+                return;
+            }
+            
+            // Check if user is owner or has delete permission
+            if (!$this->team->isOwnedBy(Auth::id()) && !$this->team->userHasPermission(Auth::id(), 'delete')) {
+                session()->flash('error', 'You do not have permission to remove members from this team.');
+                return;
             }
             
             // Don't allow removing the owner
@@ -51,8 +58,15 @@
         }
         
         public function updateMemberRole() {
-            if (!$this->team || !$this->team->userHasPermission(Auth::id(), 'write')) {
-                abort(403);
+            if (!$this->team) {
+                session()->flash('error', 'No team selected.');
+                return;
+            }
+            
+            // Check if user is owner or has write permission
+            if (!$this->team->isOwnedBy(Auth::id()) && !$this->team->userHasPermission(Auth::id(), 'write')) {
+                session()->flash('error', 'You do not have permission to update member roles.');
+                return;
             }
             
             $this->validate([

@@ -27,9 +27,10 @@
                 'role' => 'required|in:admin,member,viewer',
             ]);
             
-            // Check if user already has permission to invite
-            if (!$this->team->userHasPermission(Auth::id(), 'invite')) {
-                abort(403);
+            // Check if user is owner or has invite permission
+            if (!$this->team->isOwnedBy(Auth::id()) && !$this->team->userHasPermission(Auth::id(), 'invite')) {
+                session()->flash('error', 'You do not have permission to send invitations for this team.');
+                return;
             }
             
             // Check if user is already a member
@@ -64,8 +65,10 @@
             
             $invitation = TeamInvitation::findOrFail($invitationId);
             
-            if (!$this->team->userHasPermission(Auth::id(), 'invite')) {
-                abort(403);
+            // Check if user is owner or has invite permission
+            if (!$this->team->isOwnedBy(Auth::id()) && !$this->team->userHasPermission(Auth::id(), 'invite')) {
+                session()->flash('error', 'You do not have permission to cancel invitations for this team.');
+                return;
             }
             
             $invitation->delete();

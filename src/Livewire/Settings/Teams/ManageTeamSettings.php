@@ -20,8 +20,15 @@
         }
         
         public function saveTeamSettings() {
-            if (!$this->team || !$this->team->userHasPermission(Auth::id(), 'write')) {
-                abort(403);
+            if (!$this->team) {
+                session()->flash('error', 'No team selected.');
+                return;
+            }
+            
+            // Check if user is owner or has write permission
+            if (!$this->team->isOwnedBy(Auth::id()) && !$this->team->userHasPermission(Auth::id(), 'write')) {
+                session()->flash('error', 'You do not have permission to update this team.');
+                return;
             }
             
             $this->validate([
