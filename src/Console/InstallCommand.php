@@ -7,12 +7,17 @@ use Illuminate\Support\Facades\File;
 
 class InstallCommand extends Command
 {
-    protected $signature = 'teams:install {--force : Overwrite existing files}';
+    protected $signature = 'teams:install {--force : Overwrite existing files} {--update : Update existing installation}';
     
-    protected $description = 'Install the Laravel Teams package';
+    protected $description = 'Install or update the Laravel Teams package';
 
     public function handle()
     {
+        if ($this->option('update')) {
+            $this->update();
+            return;
+        }
+
         $this->info('Installing Laravel Teams...');
 
         // Publish configuration
@@ -42,6 +47,35 @@ class InstallCommand extends Command
         $this->info('1. Add <livewire:teams.teams /> to your settings page');
         $this->info('2. Visit /teams to start managing teams');
         $this->info('3. Check the documentation at: https://github.com/fox-run-holdings/laravel-teams');
+    }
+
+    protected function update()
+    {
+        $this->info('Updating Laravel Teams...');
+
+        // Publish updated configuration
+        $this->call('vendor:publish', [
+            '--tag' => 'laravel-teams-config',
+            '--force' => true
+        ]);
+
+        // Publish updated views
+        $this->call('vendor:publish', [
+            '--tag' => 'laravel-teams-views',
+            '--force' => true
+        ]);
+
+        // Run migrations
+        $this->call('migrate');
+
+        // Clear caches
+        $this->call('view:clear');
+        $this->call('config:clear');
+        $this->call('route:clear');
+
+        $this->info('Laravel Teams updated successfully!');
+        $this->info('');
+        $this->info('Your teams functionality has been updated to the latest version.');
     }
 
     protected function addTeamsRoute()
