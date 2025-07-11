@@ -20,8 +20,16 @@
         }
         
         public function saveTeamSettings() {
+            // Add debugging
+            \Log::info('SaveTeamSettings called', [
+                'team' => $this->team?->id,
+                'teamName' => $this->teamName,
+                'teamSlug' => $this->teamSlug,
+                'user' => Auth::id()
+            ]);
+            
             if (!$this->team) {
-                session()->flash('error', 'No team selected.');
+                session()->flash('error', 'No team selected. Please select a team first.');
                 return;
             }
             
@@ -31,21 +39,39 @@
                 return;
             }
             
-            $this->validate([
-                'teamName' => 'required|string|max:255',
-                'teamSlug' => 'required|string|max:255|unique:teams,slug,' . $this->team->id,
-            ]);
-            
-            $this->team->update([
-                'name' => $this->teamName,
-                'slug' => $this->teamSlug,
-            ]);
-            
-            session()->flash('status', 'team-updated');
-            $this->dispatch('team-saved');
+            try {
+                $this->validate([
+                    'teamName' => 'required|string|max:255',
+                    'teamSlug' => 'required|string|max:255|unique:teams,slug,' . $this->team->id,
+                ]);
+                
+                $this->team->update([
+                    'name' => $this->teamName,
+                    'slug' => $this->teamSlug,
+                ]);
+                
+                session()->flash('status', 'team-updated');
+                $this->dispatch('team-saved');
+                
+                \Log::info('Team updated successfully', ['team_id' => $this->team->id]);
+                
+            } catch (\Exception $e) {
+                \Log::error('Error updating team', [
+                    'team_id' => $this->team->id,
+                    'error' => $e->getMessage()
+                ]);
+                session()->flash('error', 'Error updating team: ' . $e->getMessage());
+            }
         }
         
         public function render() {
+            // If no team is selected, show a message
+            if (!$this->team) {
+                return view('laravel-teams::livewire.settings.manage-team-settings', [
+                    'noTeamSelected' => true
+                ]);
+            }
+            
             return view('laravel-teams::livewire.settings.manage-team-settings');
         }
     }
