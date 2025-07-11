@@ -36,6 +36,7 @@ A comprehensive team management package for Laravel 12 applications, providing J
 
 ### Developer Experience
 - ✅ **One-command installation** with automatic setup
+- ✅ **One-command updates** for seamless upgrades
 - ✅ **Comprehensive API** with helper methods and traits
 - ✅ **Middleware integration** for team-aware routes
 - ✅ **Extensible architecture** for custom modifications
@@ -92,18 +93,69 @@ If you prefer to install manually:
 4. **Add the teams route to `routes/web.php`**:
    ```php
    Route::middleware(['auth'])->group(function () {
-       Route::get('teams', function () {
-           return view('teams');
-       })->name('teams');
+       Route::get('team/{team_id?}', \FoxRunHoldings\LaravelTeams\Livewire\Settings\Teams\ManageTeamSettings::class)->name('team');
    });
    ```
 
 5. **Add teams navigation to your header** (optional):
    ```blade
-   <flux:navbar.item icon="users" :href="route('teams')" :current="request()->routeIs('teams')" wire:navigate>
+   <flux:navbar.item icon="users" :href="route('team')" :current="request()->routeIs('team*')" wire:navigate>
        {{ __('Teams') }}
    </flux:navbar.item>
    ```
+
+## 🔄 Updating
+
+### Automatic Update
+
+To update to the latest version:
+
+1. **Update the package**:
+   ```bash
+   composer update fox-run-holdings/laravel-teams
+   ```
+
+2. **Run the update command**:
+   ```bash
+   php artisan teams:install --update
+   ```
+
+This will automatically:
+- ✅ Publish updated configuration and views
+- ✅ Run any new migrations
+- ✅ Clear all caches (views, config, routes)
+
+### Manual Update
+
+If you prefer to update manually:
+
+```bash
+# Publish updated assets
+php artisan vendor:publish --tag=laravel-teams-config --force
+php artisan vendor:publish --tag=laravel-teams-views --force
+
+# Run migrations
+php artisan migrate
+
+# Clear caches
+php artisan view:clear
+php artisan config:clear
+php artisan route:clear
+```
+
+## 🛣️ Routing
+
+The package provides a simplified routing structure:
+
+### Team Management Routes
+
+- **`/team`** - Teams listing and creation (when no team is selected)
+- **`/team/{team_id}`** - Specific team management (when a team is selected)
+
+### URL Examples
+
+- `/team` - View all teams, create new team, or select existing team
+- `/team/123` - Manage team with ID 123 (settings, members, invitations)
 
 ## ⚙️ Configuration
 
@@ -112,93 +164,21 @@ The package configuration is located in `config/teams.php`. You can customize:
 ### Basic Configuration
 ```php
 return [
-    // Model classes
-    'team_model' => \FoxRunHoldings\LaravelTeams\Models\Team::class,
-    'team_invitation_model' => \FoxRunHoldings\LaravelTeams\Models\TeamInvitation::class,
-    'user_model' => config('auth.providers.users.model'),
-
-    // Features
-    'personal_team' => true,
-    'invitations' => true,
-
-    // Roles and permissions
     'roles' => [
-        'owner' => 'Owner',
-        'admin' => 'Admin',
-        'member' => 'Member',
-        'viewer' => 'Viewer',
-    ],
-
-    'permissions' => [
-        'owner' => ['*'],
-        'admin' => ['read', 'write', 'delete', 'invite'],
-        'member' => ['read', 'write'],
-        'viewer' => ['read'],
+        'owner' => [
+            'permissions' => ['*'], // All permissions
+        ],
+        'admin' => [
+            'permissions' => ['read', 'write', 'delete', 'invite'],
+        ],
+        'member' => [
+            'permissions' => ['read', 'write'],
+        ],
+        'viewer' => [
+            'permissions' => ['read'],
+        ],
     ],
 ];
-```
-
-## 🎯 Usage
-
-### Basic Team Management
-
-```php
-use FoxRunHoldings\LaravelTeams\Models\Team;
-
-// Create a team
-$team = Team::create([
-    'name' => 'My Team',
-    'owner_id' => auth()->id(),
-]);
-
-// Add a user to a team
-$team->users()->attach($userId, ['role' => 'member']);
-
-// Check if user has permission
-if ($team->userHasPermission($user, 'write')) {
-    // User can write to team
-}
-
-// Switch teams
-$user->switchTeam($team);
-```
-
-### User Model Extensions
-
-The User model is automatically extended with team functionality:
-
-```php
-$user = auth()->user();
-
-// Relationships
-$user->teams; // Teams user belongs to
-$user->ownedTeams; // Teams user owns
-$user->currentTeam; // User's current team
-$user->personalTeam; // User's personal team
-
-// Methods
-$user->switchTeam($team); // Switch to different team
-$user->belongsToTeam($team); // Check team membership
-$user->ownsTeam($team); // Check team ownership
-$user->getTeamRole($team); // Get user's role in team
-```
-
-### Team Model API
-
-```php
-use FoxRunHoldings\LaravelTeams\Models\Team;
-
-$team = Team::find(1);
-
-// Relationships
-$team->owner; // Team owner
-$team->users; // Team members
-$team->invitations; // Pending invitations
-
-// Methods
-$team->hasUser($user); // Check if user is member
-$team->userHasPermission($user, 'write'); // Check permissions
-$team->isOwnedBy($user); // Check ownership
 ```
 
 ### Livewire Components
@@ -351,69 +331,61 @@ The package provides Blade views using Flux UI components:
 
 ### Customizing Views
 
-Publish the views and customize them:
+You can publish and customize the views:
 
 ```bash
 php artisan vendor:publish --tag=laravel-teams-views
 ```
 
-## 🔧 Customization
+The views will be published to `resources/views/vendor/laravel-teams/`.
 
-### Custom Team Model
+## 🔧 API Reference
 
-You can extend the Team model:
+### Team Model
 
 ```php
-use FoxRunHoldings\LaravelTeams\Models\Team;
+// Create a new team
+$team = Team::create([
+    'name' => 'My Team',
+    'owner_id' => auth()->id(),
+    'personal_team' => false,
+]);
 
-class CustomTeam extends Team
-{
-    // Add your custom functionality
-    protected $fillable = [
-        'name',
-        'slug',
-        'owner_id',
-        'personal_team',
-        'custom_field', // Add custom fields
-    ];
-}
+// Add a user to a team
+$team->users()->attach($userId, ['role' => 'member']);
+
+// Check if user is member
+$team->hasUser($userId);
+
+// Check user permissions
+$team->userHasPermission($userId, 'write');
+
+// Get team members
+$members = $team->users;
+
+// Get team invitations
+$invitations = $team->invitations;
 ```
 
-### Custom Roles and Permissions
+### User Model Extensions
 
-Modify the configuration in `config/teams.php`:
-
-```php
-'roles' => [
-    'owner' => 'Owner',
-    'admin' => 'Admin',
-    'member' => 'Member',
-    'viewer' => 'Viewer',
-    'moderator' => 'Moderator', // Add custom role
-],
-
-'permissions' => [
-    'owner' => ['*'],
-    'admin' => ['read', 'write', 'delete', 'invite'],
-    'member' => ['read', 'write'],
-    'viewer' => ['read'],
-    'moderator' => ['read', 'write', 'moderate'], // Add custom permissions
-],
-```
-
-### Custom User Model Extension
-
-The package automatically extends your User model with the `HasTeams` trait. You can customize this behavior:
+The package automatically extends your User model with team functionality:
 
 ```php
-use FoxRunHoldings\LaravelTeams\Traits\HasTeams;
+// Get user's teams
+$user->teams;
 
-class User extends Authenticatable
-{
-    use HasTeams;
-    
-    // Your custom user functionality
-}
+// Get teams user owns
+$user->ownedTeams;
+
+// Get current team
+$user->currentTeam;
+
+// Get personal team
+$user->personalTeam;
+
+// Switch to a different team
+$user->switchTeam($team);
 ```
 
 ## 🧪 Testing
@@ -421,16 +393,16 @@ class User extends Authenticatable
 The package includes comprehensive tests:
 
 ```bash
-# Run the package tests
-./vendor/bin/phpunit
+# Run the test suite
+composer test
 
-# Run specific test files
-./vendor/bin/phpunit tests/TeamTest.php
+# Run specific tests
+php artisan test --filter=TeamTest
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please feel free to submit a Pull Request.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ### Development Setup
 
@@ -447,13 +419,15 @@ We welcome contributions! Please feel free to submit a Pull Request.
 
 3. **Run tests**:
    ```bash
-   ./vendor/bin/phpunit
+   composer test
    ```
 
-### Contributing Guidelines
+4. **Make your changes** and submit a pull request
+
+### Code Style
 
 - Follow PSR-12 coding standards
-- Add tests for new features
+- Write tests for new features
 - Update documentation as needed
 - Ensure all tests pass before submitting
 
