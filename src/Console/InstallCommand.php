@@ -41,7 +41,7 @@ class InstallCommand extends Command
         $this->info('Next steps:');
         $this->info('1. Add <livewire:teams.teams /> to your settings page');
         $this->info('2. Visit /teams to start managing teams');
-        $this->info('3. Check the documentation at: https://github.com/your-repo/laravel-teams');
+        $this->info('3. Check the documentation at: https://github.com/fox-run-holdings/laravel-teams');
     }
 
     protected function addTeamsRoute()
