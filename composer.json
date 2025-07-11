@@ -1,0 +1,35 @@
+{
+    "name": "fox-run-holdings/laravel-teams",
+    "description": "Jetstream-style teams for Laravel 12 starter kit",
+    "type": "library",
+    "require": {
+        "php": "^8.4",
+        "illuminate/support": "^12.0",
+        "illuminate/database": "^12.0",
+        "livewire/livewire": "^3.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ken",
+            "email": "ken@foxrunholdings.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "FoxRunHoldings\\LaravelTeams\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "FoxRunHoldings\\LaravelTeams\\LaravelTeamsServiceProvider"
+            ]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "FoxRunHoldings\\LaravelTeams\\Tests\\": "tests/"
+        }
+    }
+}
