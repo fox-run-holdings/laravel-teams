@@ -11,8 +11,8 @@
         public $teamName = '';
         public $teamSlug = '';
         
-        public function mount(?Team $team = null) {
-            $this->team = $team ?? Auth::user()->currentTeam;
+        public function mount($team_id = null) {
+            $this->team = $team_id ? Team::find($team_id) : Auth::user()->currentTeam;
             if ($this->team) {
                 $this->teamName = $this->team->name;
                 $this->teamSlug = $this->team->slug;

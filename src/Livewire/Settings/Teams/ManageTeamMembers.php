@@ -12,8 +12,8 @@
         public $editingMember = null;
         public $editingRole = '';
         
-        public function mount(?Team $team = null) {
-            $this->team = $team ?? Auth::user()->currentTeam;
+        public function mount($team_id = null) {
+            $this->team = $team_id ? Team::find($team_id) : Auth::user()->currentTeam;
             if ($this->team) {
                 $this->refreshMembers();
             }
