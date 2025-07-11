@@ -7,22 +7,26 @@
     use Livewire\Component;
     
     class ManageTeamMembers extends Component {
-        public Team $team;
-        public $members;
+        public ?Team $team = null;
+        public $members = [];
         public $editingMember = null;
         public $editingRole = '';
         
-        public function mount(Team $team) {
-            $this->team = $team;
-            $this->refreshMembers();
+        public function mount(?Team $team = null) {
+            $this->team = $team ?? Auth::user()->currentTeam;
+            if ($this->team) {
+                $this->refreshMembers();
+            }
         }
         
         public function refreshMembers() {
-            $this->members = $this->team->users()->with('pivot')->get();
+            if ($this->team) {
+                $this->members = $this->team->users()->with('pivot')->get();
+            }
         }
         
         public function removeMember($userId) {
-            if (!$this->team->userHasPermission(Auth::id(), 'delete')) {
+            if (!$this->team || !$this->team->userHasPermission(Auth::id(), 'delete')) {
                 abort(403);
             }
             
@@ -47,7 +51,7 @@
         }
         
         public function updateMemberRole() {
-            if (!$this->team->userHasPermission(Auth::id(), 'write')) {
+            if (!$this->team || !$this->team->userHasPermission(Auth::id(), 'write')) {
                 abort(403);
             }
             

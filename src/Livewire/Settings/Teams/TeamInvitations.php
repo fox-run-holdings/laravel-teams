@@ -8,15 +8,20 @@
     use Livewire\Component;
     
     class TeamInvitations extends Component {
-        public Team $team;
+        public ?Team $team = null;
         public $email = '';
         public $role = 'member';
         
-        public function mount(Team $team) {
-            $this->team = $team;
+        public function mount(?Team $team = null) {
+            $this->team = $team ?? Auth::user()->currentTeam;
         }
         
         public function inviteMember() {
+            if (!$this->team) {
+                session()->flash('error', 'No team selected.');
+                return;
+            }
+            
             $this->validate([
                 'email' => 'required|email',
                 'role' => 'required|in:admin,member,viewer',
@@ -52,6 +57,11 @@
         }
         
         public function cancelInvitation($invitationId) {
+            if (!$this->team) {
+                session()->flash('error', 'No team selected.');
+                return;
+            }
+            
             $invitation = TeamInvitation::findOrFail($invitationId);
             
             if (!$this->team->userHasPermission(Auth::id(), 'invite')) {
@@ -64,7 +74,7 @@
         }
         
         public function render() {
-            $invitations = $this->team->invitations()->get();
+            $invitations = $this->team ? $this->team->invitations()->get() : collect();
             
             return view('laravel-teams::livewire.settings.team-invitations', [
                 'invitations' => $invitations,

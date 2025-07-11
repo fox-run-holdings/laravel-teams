@@ -7,18 +7,20 @@
     use Livewire\Component;
     
     class ManageTeamSettings extends Component {
-        public Team $team;
-        public $teamName;
-        public $teamSlug;
+        public ?Team $team = null;
+        public $teamName = '';
+        public $teamSlug = '';
         
-        public function mount(Team $team) {
-            $this->team = $team;
-            $this->teamName = $team->name;
-            $this->teamSlug = $team->slug;
+        public function mount(?Team $team = null) {
+            $this->team = $team ?? Auth::user()->currentTeam;
+            if ($this->team) {
+                $this->teamName = $this->team->name;
+                $this->teamSlug = $this->team->slug;
+            }
         }
         
         public function saveTeamSettings() {
-            if (!$this->team->userHasPermission(Auth::id(), 'write')) {
+            if (!$this->team || !$this->team->userHasPermission(Auth::id(), 'write')) {
                 abort(403);
             }
             
