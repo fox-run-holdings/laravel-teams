@@ -8,12 +8,17 @@
     use Livewire\Component;
     
     class TeamInvitations extends Component {
-        public ?Team $team = null;
+        public $team;
         public $email = '';
         public $role = 'member';
         
-        public function mount($team_id = null) {
-            $this->team = $team_id ? Team::find($team_id) : Auth::user()->currentTeam;
+        public function mount($team_id) {
+            $this->team = Team::findOrFail($team_id);
+            
+            // Check if user has access to this team
+            if (!$this->team->hasUser(Auth::id())) {
+                abort(403);
+            }
         }
         
         public function inviteMember() {
@@ -80,6 +85,7 @@
             $invitations = $this->team ? $this->team->invitations()->get() : collect();
             
             return view('laravel-teams::livewire.settings.team-invitations', [
+                'team' => $this->team,
                 'invitations' => $invitations,
             ]);
         }

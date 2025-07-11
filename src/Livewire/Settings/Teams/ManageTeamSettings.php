@@ -7,71 +7,51 @@
     use Livewire\Component;
     
     class ManageTeamSettings extends Component {
-        public ?Team $team = null;
-        public $teamName = '';
-        public $teamSlug = '';
+        public $team;
+        public $teamName;
+        public $showDeleteConfirmation = false;
         
-        public function mount($team_id = null) {
-            $this->team = $team_id ? Team::find($team_id) : Auth::user()->currentTeam;
-            if ($this->team) {
-                $this->teamName = $this->team->name;
-                $this->teamSlug = $this->team->slug;
+        public function mount($team_id) {
+            $this->team = Team::findOrFail($team_id);
+            
+            // Check if user has access to this team
+            if (!$this->team->hasUser(Auth::id())) {
+                abort(403);
             }
+            
+            $this->teamName = $this->team->name;
         }
         
-        public function saveTeamSettings() {
-            // Add debugging
-            \Log::info('SaveTeamSettings called', [
-                'team' => $this->team?->id,
-                'teamName' => $this->teamName,
-                'teamSlug' => $this->teamSlug,
-                'user' => Auth::id()
+        public function updateTeamName() {
+            $this->validate([
+                'teamName' => 'required|string|max:255',
             ]);
             
-            if (!$this->team) {
-                session()->flash('error', 'No team selected. Please select a team first.');
-                return;
+            // Check if user can update team
+            if (!$this->team->userHasPermission(Auth::id(), 'write')) {
+                abort(403);
             }
             
-            // Check if user is owner or has write permission
-            if (!$this->team->isOwnedBy(Auth::id()) && !$this->team->userHasPermission(Auth::id(), 'write')) {
-                session()->flash('error', 'You do not have permission to update this team.');
-                return;
+            $this->team->update(['name' => $this->teamName]);
+            
+            session()->flash('status', 'team-updated');
+        }
+        
+        public function deleteTeam() {
+            // Check if user can delete team
+            if (!$this->team->isOwnedBy(Auth::id())) {
+                abort(403);
             }
             
-            try {
-                $this->validate([
-                    'teamName' => 'required|string|max:255',
-                    'teamSlug' => 'required|string|max:255|unique:teams,slug,' . $this->team->id,
-                ]);
-                
-                $this->team->update([
-                    'name' => $this->teamName,
-                    'slug' => $this->teamSlug,
-                ]);
-                
-                session()->flash('status', 'team-updated');
-                $this->dispatch('team-saved');
-                
-                \Log::info('Team updated successfully', ['team_id' => $this->team->id]);
-                
-            } catch (\Exception $e) {
-                \Log::error('Error updating team', [
-                    'team_id' => $this->team->id,
-                    'error' => $e->getMessage()
-                ]);
-                session()->flash('error', 'Error updating team: ' . $e->getMessage());
-            }
+            $this->team->delete();
+            
+            // Redirect to teams page
+            return redirect()->route('team');
         }
         
         public function render() {
-            // If no team is selected, show a message
-            if (!$this->team) {
-                return view('laravel-teams::livewire.settings.manage-team-settings', [
-                    'noTeamSelected' => true
-                ]);
-            }
-            
-            return view('laravel-teams::livewire.settings.manage-team-settings');
+            return view('laravel-teams::livewire.settings.manage-team-settings', [
+                'team' => $this->team,
+            ]);
         }
     }

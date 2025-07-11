@@ -6,6 +6,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Symfony\Component\HttpFoundation\Response;
+    use FoxRunHoldings\LaravelTeams\Models\Team;
     
     class EnsureUserHasTeam
     {
@@ -20,8 +21,19 @@
             
             $user = Auth::user();
             
+            // If user has no teams at all, create a personal team
+            if ($user->teams()->count() === 0) {
+                $personalTeam = Team::create([
+                    'name' => $user->name . "'s Team",
+                    'owner_id' => $user->id,
+                    'personal_team' => true,
+                ]);
+                
+                $personalTeam->users()->attach($user->id, ['role' => 'owner']);
+                $user->update(['current_team_id' => $personalTeam->id]);
+            }
             // If user has no current team, try to set one
-            if (!$user->current_team_id) {
+            elseif (!$user->current_team_id) {
                 // Try to get personal team first
                 $personalTeam = $user->personalTeam();
                 
@@ -33,16 +45,6 @@
                     
                     if ($firstTeam) {
                         $user->update(['current_team_id' => $firstTeam->id]);
-                    } else {
-                        // Create personal team if none exists
-                        $personalTeam = \FoxRunHoldings\LaravelTeams\Models\Team::create([
-                            'name' => $user->name . "'s Team",
-                            'owner_id' => $user->id,
-                            'personal_team' => true,
-                        ]);
-                        
-                        $personalTeam->users()->attach($user->id, ['role' => 'owner']);
-                        $user->update(['current_team_id' => $personalTeam->id]);
                     }
                 }
             }

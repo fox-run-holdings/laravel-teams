@@ -13,6 +13,9 @@
             $this->loadViewsFrom(__DIR__ . '/resources/views', 'laravel-teams');
             $this->loadRoutesFrom(__DIR__ . '/routes/teams.php');
             
+            // Register middleware
+            $this->app['router']->aliasMiddleware('ensure.user.has.team', \FoxRunHoldings\LaravelTeams\Middleware\EnsureUserHasTeam::class);
+            
             // Automatically extend the User model
             $this->extendUserModel();
             
@@ -21,6 +24,7 @@
             Livewire::component('teams.manage-team-settings', \FoxRunHoldings\LaravelTeams\Livewire\Settings\Teams\ManageTeamSettings::class);
             Livewire::component('teams.manage-team-members', \FoxRunHoldings\LaravelTeams\Livewire\Settings\Teams\ManageTeamMembers::class);
             Livewire::component('teams.team-invitations', \FoxRunHoldings\LaravelTeams\Livewire\Settings\Teams\TeamInvitations::class);
+            Livewire::component('team-dropdown', \FoxRunHoldings\LaravelTeams\Livewire\TeamDropdown::class);
             
             // Register policies
             Gate::policy(\FoxRunHoldings\LaravelTeams\Models\Team::class, \FoxRunHoldings\LaravelTeams\Policies\TeamPolicy::class);

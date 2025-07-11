@@ -24,8 +24,8 @@ php artisan teams:install
 This command will automatically:
 - Publish configuration and views
 - Run migrations
-- Add teams route to `routes/web.php`
-- Add teams navigation to your header
+- Add teams routes to `routes/web.php`
+- Add team dropdown to your navbar
 - Create the teams view
 
 ### Alternative: Manual Installation
@@ -41,25 +41,15 @@ php artisan vendor:publish --tag=laravel-teams-views
 php artisan migrate
 ```
 
-## Step 3: Add Teams to Your Settings
+## Step 3: Add Team Dropdown to Navbar
 
-Add the teams component to your settings page. In your settings layout or view:
-
-```blade
-<livewire:teams.teams />
-```
-
-## Step 4: Add Teams Navigation (Optional)
-
-Add a teams link to your navigation:
+The installation command automatically adds the team dropdown to your navbar. If you need to add it manually:
 
 ```blade
-<flux:navbar.item icon="users" :href="route('team')" :current="request()->routeIs('team*')" wire:navigate>
-    {{ __('Teams') }}
-</flux:navbar.item>
+<livewire:team-dropdown />
 ```
 
-## Step 5: Configure User Model (Already Done)
+## Step 4: Configure User Model (Already Done)
 
 The package automatically extends your User model with team functionality. The following relationships and methods are added:
 
@@ -69,12 +59,13 @@ The package automatically extends your User model with team functionality. The f
 - `$user->personalTeam` - User's personal team
 - `$user->switchTeam($team)` - Switch to a different team
 
-## Step 6: Test the Installation
+## Step 5: Test the Installation
 
 1. Create a new user account
-2. Navigate to the teams page
-3. Create a new team
-4. Invite other users to your team
+2. Check that the team dropdown appears in your navbar
+3. Click "Create New Team" to create your first team
+4. Create a new team and verify it appears in the dropdown
+5. Click "Manage Team" to manage the current team
 
 ## Updating the Package
 
@@ -117,17 +108,45 @@ php artisan route:clear
 
 ## Routing Structure
 
-The package provides a simplified routing structure:
+The package provides a simplified routing structure that matches Laravel Jetstream's team management:
 
 ### Team Management Routes
 
-- **`/team`** - Teams listing and creation (when no team is selected)
-- **`/team/{team_id}`** - Specific team management (when a team is selected)
+- **`/team`** - Team creation and listing (when no team is selected)
+- **`/team/{team_id}/manage`** - Team management (settings, members, invitations)
 
 ### URL Examples
 
 - `/team` - View all teams, create new team, or select existing team
-- `/team/123` - Manage team with ID 123 (settings, members, invitations)
+- `/team/123/manage` - Manage team with ID 123 (settings, members, invitations)
+
+## User Interface
+
+### Navbar Team Dropdown
+
+The team dropdown in the navbar provides:
+
+- **Current team display**: Shows the current team name or "No team"
+- **Team switching**: Click "Switch to" for other teams
+- **Team management**: Click "Manage Team" for current team
+- **Create new team**: "Create New Team" option at the bottom
+- **Visual indicators**: Current team is highlighted with a checkmark
+
+### Team Management Pages
+
+#### Team Creation (`/team`)
+When no team is selected, users see:
+- List of all teams they belong to
+- Form to create a new team
+- Option to switch between teams
+- Delete teams (if they own them)
+
+#### Team Management (`/team/{team_id}/manage`)
+When a specific team is selected, users see:
+- Team settings (name, slug)
+- Member management
+- Team invitations
+- Role management
 
 ## Configuration
 
@@ -182,22 +201,103 @@ $team->users()->detach($userId);
 $team->users()->updateExistingPivot($userId, ['role' => 'admin']);
 ```
 
-### Checking Permissions
+### Personal Teams
+
+The package automatically creates a personal team for each user. Personal teams:
+- Are created automatically when a user first accesses team features
+- Cannot be deleted
+- Are owned by the user
+- Have the `personal_team` flag set to `true`
+
+### Team Switching
+
+Users can switch between teams using:
 
 ```php
-// Check if user has specific permission
-if ($team->userHasPermission($user, 'write')) {
+// Programmatically
+auth()->user()->switchTeam($team);
+
+// Via the dropdown
+// The dropdown automatically handles team switching
+```
+
+### Team Permissions
+
+The package includes a comprehensive permission system:
+
+```php
+// Check if user has permission
+if ($team->userHasPermission(auth()->id(), 'write')) {
     // User can write to team
 }
 
-// Check if user is team owner
-if ($team->isOwnedBy($user)) {
+// Check if user is owner
+if ($team->isOwnedBy(auth()->id())) {
     // User owns the team
 }
 
-// Check if user is team member
-if ($team->hasUser($user)) {
+// Check if user is member
+if ($team->hasUser(auth()->id())) {
     // User is a member of the team
+}
+```
+
+## Middleware
+
+The package includes middleware to ensure users have teams:
+
+```php
+Route::middleware(['auth', 'ensure.user.has.team'])->group(function () {
+    // Routes that require a team
+});
+```
+
+This middleware:
+- Automatically creates a personal team for users who don't have any teams
+- Sets the current team if none is selected
+- Ensures users always have a team context
+
+## Customization
+
+### Custom Team Roles
+
+You can customize team roles in `config/teams.php`:
+
+```php
+'roles' => [
+    'owner' => [
+        'permissions' => ['*'],
+    ],
+    'admin' => [
+        'permissions' => ['read', 'write', 'delete', 'invite'],
+    ],
+    'member' => [
+        'permissions' => ['read', 'write'],
+    ],
+    'viewer' => [
+        'permissions' => ['read'],
+    ],
+],
+```
+
+### Custom Views
+
+Publish the views to customize the UI:
+
+```bash
+php artisan vendor:publish --tag=laravel-teams-views
+```
+
+The views will be published to `resources/views/vendor/laravel-teams/`.
+
+### Custom Components
+
+Extend the Livewire components to add custom functionality:
+
+```php
+class CustomTeamComponent extends \FoxRunHoldings\LaravelTeams\Livewire\Settings\Teams\Teams
+{
+    // Add your custom logic
 }
 ```
 
@@ -205,42 +305,34 @@ if ($team->hasUser($user)) {
 
 ### Common Issues
 
-1. **"Class not found" errors**: Clear your composer autoload cache:
-   ```bash
-   composer dump-autoload
-   ```
+1. **Team dropdown not appearing**: Make sure the component is added to your navbar
+2. **Routes not working**: Check that the routes are properly added to `routes/web.php`
+3. **Permissions errors**: Ensure the user has the correct role in the team
+4. **Personal team not created**: The middleware should handle this automatically
 
-2. **Views not updating**: Clear view cache:
-   ```bash
-   php artisan view:clear
-   ```
+### Debugging
 
-3. **Routes not working**: Clear route cache:
-   ```bash
-   php artisan route:clear
-   ```
+Enable debug mode to see detailed error messages:
 
-4. **Configuration not loading**: Clear config cache:
-   ```bash
-   php artisan config:clear
-   ```
+```php
+// In config/app.php
+'debug' => true,
+```
 
-### Getting Help
+### Support
 
 If you encounter issues:
-
-1. Check the [GitHub Issues](https://github.com/fox-run-holdings/laravel-teams/issues)
-2. Review the [Documentation](https://github.com/fox-run-holdings/laravel-teams/wiki)
-3. Join the [Discussions](https://github.com/fox-run-holdings/laravel-teams/discussions)
+1. Check the documentation
+2. Search existing issues on GitHub
+3. Create a new issue with detailed information
 
 ## Next Steps
 
 After installation, you can:
 
-1. **Customize the views** by publishing them to your application
-2. **Extend the models** to add custom functionality
-3. **Add custom roles and permissions** through configuration
-4. **Integrate with your existing authentication** system
-5. **Add team-aware middleware** to your routes
+1. **Customize the UI** by publishing and modifying views
+2. **Add team-aware routes** using the middleware
+3. **Extend functionality** by creating custom components
+4. **Configure roles and permissions** to match your needs
 
-For more advanced usage, see the [API Reference](https://github.com/fox-run-holdings/laravel-teams/wiki/API-Reference) in the documentation. 
+The package is designed to be simple yet powerful, providing all the team management features you need for a Laravel 12 application with Livewire 3 and Flux UI. 

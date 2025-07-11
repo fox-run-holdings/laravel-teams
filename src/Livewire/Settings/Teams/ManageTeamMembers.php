@@ -7,16 +7,20 @@
     use Livewire\Component;
     
     class ManageTeamMembers extends Component {
-        public ?Team $team = null;
+        public $team;
         public $members = [];
         public $editingMember = null;
         public $editingRole = '';
         
-        public function mount($team_id = null) {
-            $this->team = $team_id ? Team::find($team_id) : Auth::user()->currentTeam;
-            if ($this->team) {
-                $this->refreshMembers();
+        public function mount($team_id) {
+            $this->team = Team::findOrFail($team_id);
+            
+            // Check if user has access to this team
+            if (!$this->team->hasUser(Auth::id())) {
+                abort(403);
             }
+            
+            $this->refreshMembers();
         }
         
         public function refreshMembers() {
@@ -97,6 +101,7 @@
         
         public function render() {
             return view('laravel-teams::livewire.settings.manage-team-members', [
+                'team' => $this->team,
                 'members' => $this->members,
             ]);
         }

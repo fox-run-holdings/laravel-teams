@@ -5,7 +5,7 @@
     <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
         <flux:text class="font-medium mb-4">{{ __('Invite New Member') }}</flux:text>
         
-        <form wire:submit="inviteMember" class="space-y-4">
+        <form wire:submit.prevent="inviteMember" class="space-y-4">
             <flux:input 
                 wire:model="email" 
                 :label="__('Email Address')" 

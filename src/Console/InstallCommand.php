@@ -44,8 +44,8 @@ class InstallCommand extends Command
         $this->info('Laravel Teams installed successfully!');
         $this->info('');
         $this->info('Next steps:');
-        $this->info('1. Add <livewire:teams.teams /> to your settings page');
-        $this->info('2. Visit /teams to start managing teams');
+        $this->info('1. Add <livewire:team-dropdown /> to your navbar');
+        $this->info('2. Visit /team to start managing teams');
         $this->info('3. Check the documentation at: https://github.com/fox-run-holdings/laravel-teams');
     }
 
@@ -81,22 +81,22 @@ class InstallCommand extends Command
     protected function addTeamsRoute()
     {
         $webRoutesPath = base_path('routes/web.php');
-        $teamsRoute = "Route::get('teams', function () {\n    return view('teams');\n})->name('teams');";
+        $teamsRoutes = "// Teams routes\nRoute::middleware(['auth'])->group(function () {\n    Route::get('team/{team_id?}', \\FoxRunHoldings\\LaravelTeams\\Livewire\\Settings\\Teams\\Teams::class)->name('team');\n    Route::get('team/{team_id}/manage', \\FoxRunHoldings\\LaravelTeams\\Livewire\\Settings\\Teams\\ManageTeamSettings::class)->name('team.manage');\n});";
 
         if (File::exists($webRoutesPath)) {
             $content = File::get($webRoutesPath);
             
-            if (!str_contains($content, 'teams')) {
+            if (!str_contains($content, 'team')) {
                 $content = str_replace(
                     'require __DIR__.\'/auth.php\';',
-                    "require __DIR__.'/auth.php';\n\n// Teams routes\nRoute::middleware(['auth'])->group(function () {\n    $teamsRoute\n});",
+                    "require __DIR__.'/auth.php';\n\n$teamsRoutes",
                     $content
                 );
                 
                 File::put($webRoutesPath, $content);
-                $this->info('✓ Added teams route to web.php');
+                $this->info('✓ Added teams routes to web.php');
             } else {
-                $this->info('✓ Teams route already exists in web.php');
+                $this->info('✓ Teams routes already exist in web.php');
             }
         }
     }
@@ -122,30 +122,30 @@ class InstallCommand extends Command
         if ($headerPath) {
             $content = File::get($headerPath);
             
-            if (!str_contains($content, 'teams')) {
-                // Add teams navigation item - try to find a good insertion point
+            if (!str_contains($content, 'team-dropdown')) {
+                // Add team dropdown component - try to find a good insertion point
                 if (str_contains($content, 'Dashboard')) {
                     $content = str_replace(
                         '{{ __(\'Dashboard\') }}',
-                        "{{ __('Dashboard') }}\n                <flux:navbar.item icon=\"users\" :href=\"route('teams')\" :current=\"request()->routeIs('teams')\" wire:navigate>\n                    {{ __('Teams') }}\n                </flux:navbar.item>",
+                        "{{ __('Dashboard') }}\n                <livewire:team-dropdown />",
                         $content
                     );
                 } elseif (str_contains($content, 'flux:navbar.item')) {
                     // Add after existing navbar items
                     $content = str_replace(
                         '</flux:navbar>',
-                        "                <flux:navbar.item icon=\"users\" :href=\"route('teams')\" :current=\"request()->routeIs('teams')\" wire:navigate>\n                    {{ __('Teams') }}\n                </flux:navbar.item>\n            </flux:navbar>",
+                        "                <livewire:team-dropdown />\n            </flux:navbar>",
                         $content
                     );
                 }
                 
                 File::put($headerPath, $content);
-                $this->info('✓ Added teams navigation to header');
+                $this->info('✓ Added team dropdown to header');
             } else {
-                $this->info('✓ Teams navigation already exists in header');
+                $this->info('✓ Team dropdown already exists in header');
             }
         } else {
-            $this->warn('⚠ Could not find header file to add navigation. Please add teams navigation manually.');
+            $this->warn('⚠ Could not find header file to add navigation. Please add <livewire:team-dropdown /> to your navbar manually.');
         }
     }
 } 

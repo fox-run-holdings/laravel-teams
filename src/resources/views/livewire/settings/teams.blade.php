@@ -1,4 +1,5 @@
 <div class="w-full space-y-6">
+    <!-- Team Creation and Listing View -->
     <div>
         <flux:text class="text-2xl font-bold">{{ __('Teams') }}</flux:text>
         <flux:text class="text-gray-600 dark:text-gray-400">{{ __('Manage your teams and switch between them.') }}</flux:text>
@@ -69,7 +70,7 @@
         <div class="mt-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <flux:text class="text-lg font-semibold mb-4">{{ __('Create New Team') }}</flux:text>
             
-            <form wire:submit="createTeam" class="space-y-4">
+            <form wire:submit.prevent="createTeam" class="space-y-4">
                 <flux:input 
                     wire:model="teamName" 
                     :label="__('Team Name')" 

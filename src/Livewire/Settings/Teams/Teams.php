@@ -13,9 +13,20 @@
         public $showCreateForm = false;
         public $teamName = '';
         public $currentTeam;
+        public $teams = [];
         
-        public function mount() {
+        public function mount($team_id = null) {
             $this->currentTeam = Auth::user()->currentTeam;
+            $this->teams = Auth::user()->teams()->with('owner')->get();
+            
+            // If a specific team is requested, redirect to team management
+            if ($team_id) {
+                $team = Team::find($team_id);
+                if ($team && $team->hasUser(Auth::id())) {
+                    // Redirect to team management page
+                    return redirect()->route('team.manage', $team_id);
+                }
+            }
         }
         
         public function createTeam() {
@@ -35,6 +46,9 @@
             // Set as current team
             Auth::user()->update(['current_team_id' => $team->id]);
             $this->currentTeam = $team;
+            
+            // Refresh teams list
+            $this->teams = Auth::user()->teams()->with('owner')->get();
             
             $this->teamName = '';
             $this->showCreateForm = false;
@@ -73,15 +87,15 @@
                 }
             }
             
+            // Refresh teams list
+            $this->teams = Auth::user()->teams()->with('owner')->get();
+            
             session()->flash('status', 'team-deleted');
         }
         
         public function render() {
-            $user = Auth::user();
-            $teams = $user->teams()->with('owner')->get();
-            
             return view('laravel-teams::livewire.settings.teams', [
-                'teams' => $teams,
+                'teams' => $this->teams,
                 'currentTeam' => $this->currentTeam,
             ]);
         }
