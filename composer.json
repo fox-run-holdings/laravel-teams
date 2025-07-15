@@ -1,6 +1,6 @@
 {
     "name": "fox-run-holdings/laravel-teams",
-    "description": "A Laravel-based team management system with Livewire components",
+    "description": "A Laravel package for team management with invitations and role-based access control",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -13,6 +13,10 @@
         "php": "^8.1",
         "laravel/framework": "^10.0|^11.0",
         "livewire/livewire": "^3.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0",
+        "phpunit/phpunit": "^10.0"
     },
     "autoload": {
         "psr-4": {
@@ -27,9 +31,12 @@
     "extra": {
         "laravel": {
             "providers": [
-                "FoxRunHoldings\\LaravelTeams\\LaravelTeamsServiceProvider"
+                "FoxRunHoldings\\LaravelTeams\\Providers\\TeamsServiceProvider"
             ]
         }
+    },
+    "config": {
+        "sort-packages": true
     },
     "minimum-stability": "stable",
     "prefer-stable": true
