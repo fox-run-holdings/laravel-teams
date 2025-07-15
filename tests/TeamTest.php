@@ -1,29 +1,27 @@
 <?php
 
-namespace FoxRunHoldings\LaravelTeams\Tests\Unit;
+namespace FoxRunHoldings\LaravelTeams\Tests;
 
 use FoxRunHoldings\LaravelTeams\Models\Team;
-use FoxRunHoldings\LaravelTeams\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class TeamTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
-    public function it_can_create_a_team()
+    public function test_can_create_team()
     {
         $team = Team::create([
             'name' => 'Test Team',
             'owner_id' => 1,
         ]);
 
+        $this->assertInstanceOf(Team::class, $team);
         $this->assertEquals('Test Team', $team->name);
         $this->assertEquals(1, $team->owner_id);
     }
 
-    /** @test */
-    public function it_has_soft_deletes()
+    public function test_team_has_soft_deletes()
     {
         $team = Team::create([
             'name' => 'Test Team',

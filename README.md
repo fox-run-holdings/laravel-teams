@@ -1,38 +1,40 @@
-# Laravel Teams
+# Laravel Teams Package
 
-A Laravel-based team management system with Livewire components. This package provides a complete team management solution with team creation, switching, and user relationships.
+A comprehensive Laravel package for team management with invitations and role-based access control.
+
+## Features
+
+- **Team Management**: Create, edit, and manage teams
+- **Role-Based Access Control**: Owner, Admin, and Member roles
+- **Team Invitations**: Send and manage team invitations
+- **Team Switching**: Switch between teams seamlessly
+- **Livewire Components**: Modern, reactive UI components
+- **Soft Deletes**: Safe team deletion with soft deletes
+- **Pagination**: Built-in pagination for team listings
 
 ## Installation
 
-1. Install the package via Composer:
+### 1. Install the package
 
 ```bash
 composer require fox-run-holdings/laravel-teams
 ```
 
-2. Publish the migrations:
+### 2. Publish the configuration and views
 
 ```bash
-php artisan vendor:publish --tag=laravel-teams-migrations
+php artisan vendor:publish --provider="FoxRunHoldings\LaravelTeams\Providers\TeamsServiceProvider"
 ```
 
-3. Run the migrations:
+### 3. Run the migrations
 
 ```bash
 php artisan migrate
 ```
 
-4. Publish the views (optional):
+### 4. Add team relationships to your User model
 
-```bash
-php artisan vendor:publish --tag=laravel-teams-views
-```
-
-## Manual Setup Required
-
-### 1. Add User Model Relationships
-
-Add the following relationships to your `User` model:
+Add the following methods to your `App\Models\User` model:
 
 ```php
 <?php
@@ -40,96 +42,182 @@ Add the following relationships to your `User` model:
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use FoxRunHoldings\LaravelTeams\Models\Team;
+use FoxRunHoldings\LaravelTeams\Models\TeamInvitation;
 
 class User extends Authenticatable
 {
     // ... existing code ...
 
-    // Team relationships
-    public function teams()
+    /**
+     * Get the teams that the user belongs to.
+     */
+    public function teams(): BelongsToMany
     {
-        return $this->belongsToMany(Team::class, 'team_user')->withPivot('role')->withTimestamps();
+        return $this->belongsToMany(Team::class, 'team_user')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
-    public function hasTeams()
+    /**
+     * Get the team invitations for the user.
+     */
+    public function Invitations(): HasMany
     {
-        return $this->teams()->exists();
+        return $this->hasMany(TeamInvitation::class, 'email', 'email');
     }
 
-    public function ownedTeams()
-    {
-        return $this->hasMany(Team::class, 'owner_id');
-    }
-
+    /**
+     * Get the current team of the user.
+     */
     public function currentTeam()
     {
         return $this->belongsTo(Team::class, 'current_team_id');
     }
+
+    /**
+     * Check if the user has teams.
+     */
+    public function HasTeams(): bool
+    {
+        return $this->teams()->exists();
+    }
+
+    /**
+     * Get the user's role in a specific team.
+     */
+    public function role($team_id): string
+    {
+        $team = $this->teams()->where('team_id', $team_id)->first();
+        return $team ? $team->pivot->role : 'member';
+    }
+
+    /**
+     * Get the user's initials for avatar display.
+     */
+    public function initials(): string
+    {
+        $name = explode(' ', $this->name);
+        $initials = '';
+        
+        if (count($name) >= 2) {
+            $initials = strtoupper(substr($name[0], 0, 1) . substr($name[1], 0, 1));
+        } else {
+            $initials = strtoupper(substr($this->name, 0, 2));
+        }
+        
+        return $initials;
+    }
 }
-```
-
-### 2. Add Routes
-
-Add the following routes to your `routes/web.php` file:
-
-```php
-use FoxRunHoldings\LaravelTeams\Livewire\Settings\Team;
-
-Route::middleware(['auth'])->group(function () {
-    // Team management routes
-    Route::get('settings/team/{team_id?}', Team::class)->name('settings.team');
-});
 ```
 
 ## Usage
 
-### Team Switcher Component
+### Facade Usage
 
-Include the team switcher component in your layout:
-
-```blade
-<livewire:laravel-teams::settings.team-switcher />
-```
-
-### Team Settings Component
-
-Use the team settings component for team management:
-
-```blade
-<livewire:laravel-teams::settings.team />
-```
-
-Or navigate to the route:
+The package provides a facade for easy access to team functionality:
 
 ```php
-Route::get('settings/team/{team_id?}', Team::class)->name('settings.team');
+use FoxRunHoldings\LaravelTeams\Facades\Teams;
+
+// Create a team
+$team = Teams::create([
+    'name' => 'My Team',
+    'owner_id' => auth()->id(),
+]);
+
+// Find a team
+$team = Teams::find(1);
+
+// Create an invitation
+$invitation = Teams::invite($team->id, 'user@example.com', 'member');
+
+// Accept an invitation
+Teams::acceptInvitation($invitation->id);
+
+// Switch to a team
+Teams::switchTeam($team->id);
+
+// Get current team
+$currentTeam = Teams::getCurrentTeam();
 ```
 
-## Features
+### Livewire Components
 
-- **Team Creation**: Create new teams with owners
-- **Team Switching**: Switch between teams with a dropdown interface
-- **User Relationships**: Many-to-many relationships between users and teams
-- **Role Management**: Support for team member roles
-- **Current Team Tracking**: Track the user's currently selected team
-- **Soft Deletes**: Teams are soft deleted for data integrity
+The package provides several Livewire components that you can use in your views:
+
+#### Team Invitations
+```blade
+<livewire:teams.invitations />
+```
+
+#### Team Management
+```blade
+<livewire:teams.manage />
+```
+
+#### Team Members
+```blade
+<livewire:teams.members />
+```
+
+#### Team Switcher
+```blade
+<livewire:teams.switcher />
+```
+
+### Routes
+
+Add the following routes to your `routes/web.php`:
+
+```php
+Route::middleware(['auth'])->group(function () {
+    Route::get('/teams', function () {
+        return view('teams.manage');
+    })->name('teams');
+    
+    Route::get('/teams/members', function () {
+        return view('teams.members');
+    })->name('teams.members');
+    
+    Route::get('/teams/invitations', function () {
+        return view('teams.invitations');
+    })->name('teams.invitations');
+});
+```
+
+### Configuration
+
+The package configuration is published to `config/teams.php`. You can customize:
+
+- User model class
+- Available team roles
+- Invitation statuses
+- Pagination settings
+- Route configuration
 
 ## Database Structure
 
-The package creates the following database structure:
+The package creates the following tables:
 
-- `teams` table: Stores team information
-- `team_user` pivot table: Manages user-team relationships with roles
-- `current_team_id` column: Added to users table to track current team
+- `teams` - Team information
+- `team_user` - Many-to-many relationship between teams and users
+- `team_invitations` - Team invitations
+- Adds `current_team_id` to the `users` table
 
-## Configuration
+## Contributing
 
-The package uses Laravel's default authentication configuration. Make sure your `config/auth.php` has the correct user model configured.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+This package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
 ## Support
 
