@@ -1,5 +1,10 @@
 # Laravel Teams Package
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/fox-run-holdings/laravel-teams.svg)](https://packagist.org/packages/fox-run-holdings/laravel-teams)
+[![Total Downloads](https://img.shields.io/packagist/dt/fox-run-holdings/laravel-teams.svg)](https://packagist.org/packages/fox-run-holdings/laravel-teams)
+[![Monthly Downloads](https://img.shields.io/packagist/dm/fox-run-holdings/laravel-teams.svg)](https://packagist.org/packages/fox-run-holdings/laravel-teams)
+[![License](https://img.shields.io/packagist/l/fox-run-holdings/laravel-teams.svg)](https://packagist.org/packages/fox-run-holdings/laravel-teams)
+
 A comprehensive Laravel package for team management with invitations and role-based access control.
 
 ## Features
@@ -13,6 +18,16 @@ A comprehensive Laravel package for team management with invitations and role-ba
 - **Pagination**: Built-in pagination for team listings
 
 ## Installation
+
+### Prerequisites
+
+This package requires **Flux UI Pro** to be installed in your Laravel application. The views and components use Flux UI Pro components.
+
+If you haven't installed Flux UI Pro yet, please install it first:
+
+```bash
+composer require flux-ui/flux-ui-pro
+```
 
 ### 1. Install the package
 
